@@ -11,6 +11,7 @@ import {
 } from '../../src/Fingerprint';
 import { normalizeOptionsAsync } from '../../src/Options';
 import { getHashSourcesAsync } from '../../src/sourcer/Sourcer';
+import { E2E_EXPO_PACKAGE_VERSION, E2E_TEMPLATE_SDK_VERSION } from './utils/constants';
 
 jest.mock('../../src/ExpoConfigLoader', () => ({
   // Mock the getExpoConfigLoaderPath to use the built version rather than the typescript version from src
@@ -29,16 +30,19 @@ describe('managed project test', () => {
   beforeAll(async () => {
     await fs.rm(projectRoot, { force: true, recursive: true });
 
-    // Pin the SDK version to prevent the latest version breaking snapshots
-    await spawnAsync('bunx', ['create-expo-app', '-t', 'blank@sdk-49', projectName], {
-      stdio: 'inherit',
-      cwd: tmpDir,
-      env: {
-        ...process.env,
-        // Do not inherit the package manager from this repository
-        npm_config_user_agent: undefined,
-      },
-    });
+    await spawnAsync(
+      'bunx',
+      ['create-expo-app', '-t', `blank@${E2E_TEMPLATE_SDK_VERSION}`, projectName],
+      {
+        stdio: 'inherit',
+        cwd: tmpDir,
+        env: {
+          ...process.env,
+          // Do not inherit the package manager from this repository
+          npm_config_user_agent: undefined,
+        },
+      }
+    );
 
     originalConfig = JSON.parse(await fs.readFile(path.join(projectRoot, 'app.json'), 'utf8'));
   });
@@ -143,7 +147,7 @@ describe('managed project test', () => {
 
   it('diffFingerprintChangesAsync - should return diff after adding native library', async () => {
     const fingerprint = await createFingerprintAsync(projectRoot);
-    await spawnAsync('bun', ['install', '--save', '@react-native-community/netinfo@9.3.7'], {
+    await spawnAsync('bun', ['install', '--save', '@react-native-community/netinfo@12.0.1'], {
       stdio: 'ignore',
       cwd: projectRoot,
     });
@@ -153,9 +157,10 @@ describe('managed project test', () => {
         {
           "addedSource": {
             "filePath": "node_modules/@react-native-community/netinfo",
-            "hash": "7a41febc80b298412c7dd08b77e243c7aadd5c4e",
+            "hash": "334cd6d4855e7a91245555dab588e11af60b44b8",
             "reasons": [
-              "rncoreAutolinking",
+              "rncoreAutolinkingAndroid",
+              "rncoreAutolinkingIos",
             ],
             "type": "dir",
           },
@@ -163,20 +168,41 @@ describe('managed project test', () => {
         },
         {
           "afterSource": {
-            "contents": "{"@react-native-community/netinfo":{"root":"node_modules/@react-native-community/netinfo","name":"@react-native-community/netinfo","platforms":{"ios":{"podspecPath":"node_modules/@react-native-community/netinfo/react-native-netinfo.podspec","configurations":[],"scriptPhases":[]},"android":{"sourceDir":"node_modules/@react-native-community/netinfo/android","packageImportPath":"import com.reactnativecommunity.netinfo.NetInfoPackage;","packageInstance":"new NetInfoPackage()","buildTypes":[],"componentDescriptors":[],"cmakeListsPath":"node_modules/@react-native-community/netinfo/android/build/generated/source/codegen/jni/CMakeLists.txt"}}},"expo":{"root":"node_modules/expo","name":"expo","platforms":{"ios":{"podspecPath":"node_modules/expo/Expo.podspec","configurations":[],"scriptPhases":[]},"android":{"sourceDir":"node_modules/expo/android","packageImportPath":"import expo.modules.ExpoModulesPackage;","packageInstance":"new ExpoModulesPackage()","buildTypes":[],"componentDescriptors":[],"cmakeListsPath":"node_modules/expo/android/build/generated/source/codegen/jni/CMakeLists.txt"}}}}",
-            "hash": "ac75722bd87eb0189440be83faa2249079da5839",
-            "id": "rncoreAutolinkingConfig",
+            "contents": "{"@react-native-community/netinfo":{"root":"node_modules/@react-native-community/netinfo","name":"@react-native-community/netinfo","platforms":{"android":{"sourceDir":"node_modules/@react-native-community/netinfo/android","packageImportPath":"import com.reactnativecommunity.netinfo.NetInfoPackage;","packageInstance":"new NetInfoPackage()","buildTypes":[],"libraryName":"RNCNetInfoSpec","componentDescriptors":[],"cmakeListsPath":"node_modules/@react-native-community/netinfo/android/build/generated/source/codegen/jni/CMakeLists.txt","cxxModuleCMakeListsModuleName":null,"cxxModuleCMakeListsPath":null,"cxxModuleHeaderName":null,"isPureCxxDependency":false}}},"expo":{"root":"node_modules/expo","name":"expo","platforms":{"android":{"sourceDir":"node_modules/expo/android","packageImportPath":"import expo.modules.ExpoModulesPackage;","packageInstance":"new ExpoModulesPackage()","buildTypes":[],"componentDescriptors":[],"cmakeListsPath":"node_modules/expo/android/build/generated/source/codegen/jni/CMakeLists.txt","cxxModuleCMakeListsModuleName":null,"cxxModuleCMakeListsPath":null,"cxxModuleHeaderName":null,"isPureCxxDependency":false}}}}",
+            "hash": "ad3ae18de8c44182090e89b14a35196677383997",
+            "id": "rncoreAutolinkingConfig:android",
             "reasons": [
-              "rncoreAutolinking",
+              "rncoreAutolinkingAndroid",
             ],
             "type": "contents",
           },
           "beforeSource": {
-            "contents": "{"expo":{"root":"node_modules/expo","name":"expo","platforms":{"ios":{"podspecPath":"node_modules/expo/Expo.podspec","configurations":[],"scriptPhases":[]},"android":{"sourceDir":"node_modules/expo/android","packageImportPath":"import expo.modules.ExpoModulesPackage;","packageInstance":"new ExpoModulesPackage()","buildTypes":[],"componentDescriptors":[],"cmakeListsPath":"node_modules/expo/android/build/generated/source/codegen/jni/CMakeLists.txt"}}}}",
-            "hash": "8cf8a7370fa76cf34e817714399ddea233459943",
-            "id": "rncoreAutolinkingConfig",
+            "contents": "{"expo":{"root":"node_modules/expo","name":"expo","platforms":{"android":{"sourceDir":"node_modules/expo/android","packageImportPath":"import expo.modules.ExpoModulesPackage;","packageInstance":"new ExpoModulesPackage()","buildTypes":[],"componentDescriptors":[],"cmakeListsPath":"node_modules/expo/android/build/generated/source/codegen/jni/CMakeLists.txt","cxxModuleCMakeListsModuleName":null,"cxxModuleCMakeListsPath":null,"cxxModuleHeaderName":null,"isPureCxxDependency":false}}}}",
+            "hash": "49cd30610fe5ca8a86eda4a42a13b2c00a7670df",
+            "id": "rncoreAutolinkingConfig:android",
             "reasons": [
-              "rncoreAutolinking",
+              "rncoreAutolinkingAndroid",
+            ],
+            "type": "contents",
+          },
+          "op": "changed",
+        },
+        {
+          "afterSource": {
+            "contents": "{"@react-native-community/netinfo":{"root":"node_modules/@react-native-community/netinfo","name":"@react-native-community/netinfo","platforms":{"ios":{"podspecPath":"node_modules/@react-native-community/netinfo/react-native-netinfo.podspec","version":"12.0.1","configurations":[],"scriptPhases":[]}}},"expo":{"root":"node_modules/expo","name":"expo","platforms":{"ios":{"podspecPath":"node_modules/expo/Expo.podspec","version":"56.0.3","configurations":[],"scriptPhases":[]}}}}",
+            "hash": "7f61fd3f340abfae4a6534698f89c5f1bd7a7968",
+            "id": "rncoreAutolinkingConfig:ios",
+            "reasons": [
+              "rncoreAutolinkingIos",
+            ],
+            "type": "contents",
+          },
+          "beforeSource": {
+            "contents": "{"expo":{"root":"node_modules/expo","name":"expo","platforms":{"ios":{"podspecPath":"node_modules/expo/Expo.podspec","version":"56.0.3","configurations":[],"scriptPhases":[]}}}}",
+            "hash": "0df97914029acd411c13509ac5fce5686722f2a4",
+            "id": "rncoreAutolinkingConfig:ios",
+            "reasons": [
+              "rncoreAutolinkingIos",
             ],
             "type": "contents",
           },
@@ -223,19 +249,21 @@ describe(`getHashSourcesAsync - managed project`, () => {
   beforeAll(async () => {
     await fs.rm(projectRoot, { force: true, recursive: true });
 
-    // Pin the SDK version to prevent the latest version breaking snapshots
-    await spawnAsync('bunx', ['create-expo-app', '-t', 'blank@sdk-49', projectName], {
-      stdio: 'inherit',
-      cwd: tmpDir,
-      env: {
-        ...process.env,
-        // Do not inherit the package manager from this repository
-        npm_config_user_agent: undefined,
-      },
-    });
+    await spawnAsync(
+      'bunx',
+      ['create-expo-app', '-t', `blank@${E2E_TEMPLATE_SDK_VERSION}`, projectName],
+      {
+        stdio: 'inherit',
+        cwd: tmpDir,
+        env: {
+          ...process.env,
+          // Do not inherit the package manager from this repository
+          npm_config_user_agent: undefined,
+        },
+      }
+    );
 
-    // Pin the `expo` package version to prevent the latest version breaking snapshots
-    await spawnAsync('bun', ['install', '--save', 'expo@49.0.16'], {
+    await spawnAsync('bun', ['install', '--save', `expo@${E2E_EXPO_PACKAGE_VERSION}`], {
       stdio: 'ignore',
       cwd: projectRoot,
     });
